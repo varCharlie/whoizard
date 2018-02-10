@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# vi: ft=sh noexpandtab
+#
+# (C) 2018 Charles Pantoga
+# github: varcharlie 
+# 1e100: suspects <(aka google)
+#
+# This script is used for finding the expiration date of domains.
+# It can be used for any TLD and accepts multiple forms of input.
+#
+
+set -o pipefail
+set -o nounset
+set -o errexit
+
+alias echo=/bin/echo
+alias grep=/usr/bin/grep
+alias printf=/usr/bin/printf
+alias whois=/usr/bin/whois
+alias shift='builtin shift'
+alias caller='builtin caller'
+alias exit='builtin exit'
+
+usage() {
+	cat <<-EOF
+		usage: whoizard [-h] [-f FILE | -l LIST] [-t TLD] [-s N [-C N]] [-c]
+
+		Check registration status for domain(s). If the domains are
+		registered, check the expiration date. Otherwise indicate that
+		they are unregistered.
+
+		The program can receive domain names three different ways:
+		    - From stdin (interactive mode)
+		    - From a file
+
+		Options:
+		    -h,--help		Output this help/usage text.
+		    -f,--file FILE	Read domain names from file FILE.
+		    -l,--list LIST	Space seperated list of args. This should be
+		             		supplied as a single argument (use quotes).
+		    -s,--sleep N	Sleep for N seconds after every 3 whois requests,
+		                	unless \`--chunk\` is set, then sleep after every
+		                	\`CHUNK\` requests.
+		    -C,--chunk N	When \`--sleep\` is set, check N domains before
+		                	sleeping. This option means nothing if the sleep
+		                	option is not set.
+		    -t,--tld TLD	Use this TLD for all domains. When this flag
+		                	when this flag is set, domains supplied to this
+		                	program shoud not contain a TLD and should be
+		                	plain words like 'godaddy', 'google', or 'cnn'.
+		    -c,--csv		Output in CSV format
+	EOF
+	exit ${1:-0}
+}
+
+check_domain() {
+    if test ${#} -ne 1; then
+        >&2 echo "${FUNCNAME}: argument error"
+        >&2 echo  "(caller): $(caller)"
+        exit 1
+    else
+        local DOMAIN=${1}${TLD:-}
+        if test -z "${CSV:-}"; then
+            FMTSTRING="%s: %s\n"
+        else
+            FMTSTRING="%s,%s\n"
+        fi
+        local REGEX='expiry|not found|no match|no data'
+        local OUTPUT="$(whois "${DOMAIN}" | grep -Ei "${REGEX}")"
+
+        printf "${FMTSTRING}" "${DOMAIN}" "${OUTPUT}"
+
+        # We don't need to sleep if we're in interactive mode
+        if test -n "${SLEEP:-}"; then
+            REMAINDER=$[ITER++ % CHUNK]
+            if test "${REMAINDER:-}" -eq 0; then
+                sleep ${SLEEP}
+            fi
+        fi
+    fi
+}
+
+handle_file() {
+    # If we're reading domains from a file (either stdin or INFILE)
+    # we can handle them with the same block
+    while read DOMAIN; do
+        check_domain ${DOMAIN}
+    done < ${INFILE:-/dev/fd/0}
+}
+
+handle_words() {
+    # List is a space seperated list of domains
+    while read -d' ' DOMAIN; do
+        check_domain ${DOMAIN}
+    done < <(echo ${LIST})
+}
+
+if test ${#} -gt 0; then
+    while test ${#} -gt 0; do
+        case ${1} in
+            -h|--help)
+                usage;;
+            -f|--file)
+                INFILE="${2}"
+                shift 2;;
+            -l|--list)
+                LIST="${2}"
+                shift 2;;
+            -s|--sleep)
+                SLEEP="${2}"
+                shift 2;;
+            -C|--chunk)
+                CHUNK="${2}"
+                shift 2;;
+            -c|--csv)
+                CSV=1
+                shift;;
+            -t|--tld)
+                TLD=".${2#.}"
+                shift 2;;
+            *) # Default handler
+                >&2 echo "Got unexpected argument ${1}"
+                usage 1;;
+        esac
+    done
+fi
+
+if test -n "${SLEEP:-}"; then
+    # If the sleep option was set, give CHUNK a default value of 3
+    # if the chunk option was set, this wont have any affect
+    : ${CHUNK:=3}
+    declare -i ITER=1
+    declare -i REMAINDER=1
+fi
+
+if test -n "${LIST:-}"; then
+    handle_words
+else
+    handle_file
+fi

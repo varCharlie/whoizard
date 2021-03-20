@@ -109,16 +109,17 @@ check_domain() {
 }
 
 handle_file() {
-    # If we're reading domains from a file (either stdin or INFILE)
-    # we can handle them with the same block
+	# Use newline separation
+    : ${SEP:=\n} # the colon here acts as a NOP
     while read DOMAIN; do
         check_domain ${DOMAIN}
     done < ${INFILE:-/dev/fd/0}
 }
 
 handle_words() {
-    : ${SEP:=\ }
-    while read -d$SEP DOMAIN; do
+	# Default to space separation
+    : ${SEP:=\ } # the colon here acts as a NOP
+    while read -d${SEP} DOMAIN; do
         check_domain ${DOMAIN}
     done < <(echo ${LIST})
 }

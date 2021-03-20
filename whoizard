@@ -30,29 +30,53 @@ usage() {
 		they are unregistered.
 
 		The program can receive domain names three different ways:
-		    - From stdin (interactive mode)
+		    - Interactive REPL
 		    - From a file
 		    - As an arg with a delimiter
 
 		Options:
 		    -h,--help		Output this help/usage text.
-		    -f,--file FILE	Read domain names from file FILE.
+
+		    -f,--file FILE	Read domain names from file FILE, newline separated.
+
 		    -l,--list LIST	Space seperated list of args. This should be
 		             		supplied as a single argument (use quotes).
-		    -S,--sep CHAR	CHAR seperated list of args. This should be
-		             		supplied as a single argument (use quotes).
+
+		    -S,--sep CHAR	Change domain delimiter when not interactive
+
 		    -s,--sleep N	Sleep for N seconds after every 3 whois requests,
 		                	unless \`--chunk\` is set, then sleep after every
 		                	\`CHUNK\` requests.
+
 		    -C,--chunk N	When \`--sleep\` is set, check N domains before
 		                	sleeping. This option means nothing if the sleep
 		                	option is not set.
+
 		    -t,--tld TLD	Use this TLD for all domains. When this flag
 		                	when this flag is set, domains supplied to this
 		                	program shoud not contain a TLD and should be
 		                	plain words like 'godaddy', 'google', or 'cnn'.
+
 		    -c,--csv		Output in CSV format
+
 		    -o,--opts OPTS	Options to pass to \`whois\` program
+
+		The most common way to use this program is without any arguments.
+
+		# Run program without args:
+		$ ./whoizard
+		google.com
+		google.com:    Registry Expiry Date: 2028-09-14T04:00:00Z
+
+		# Sleep 5 seconds every 8 queries
+		$ ./whoizard -s 5 -C 8
+
+		# Input from comma separated list file
+		$ ./whoizard -f domains.csv -S ","
+
+		# Take a wordlist file separated by tabs
+		# and check availability in .COM namespace
+		$ ./whoizard -f wordlist.txt -S "\t" -t "com"
 	EOF
 	exit ${1:-0}
 }

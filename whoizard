@@ -23,7 +23,7 @@ alias exit='builtin exit'
 
 usage() {
 	cat <<-EOF
-		usage: whoizard [-h] [-f FILE | -l LIST [-S CHAR] [-t TLD] [-s N [-C N]] [-c] [-o]
+		usage: whoizard [-h] [-f FILE | -l LIST [-S CHAR] [-t TLD] [-s N [-C N]] [-o]
 
 		Check registration status for domain(s). If the domains are
 		registered, check the expiration date. Otherwise indicate that
@@ -68,15 +68,10 @@ usage() {
 		google.com
 		google.com:    Registry Expiry Date: 2028-09-14T04:00:00Z
 
-		# Sleep 5 seconds every 8 queries
-		$ ./whoizard -s 5 -C 8
-
-		# Input from comma separated list file
-		$ ./whoizard -f domains.csv -S ","
-
 		# Take a wordlist file separated by tabs
 		# and check availability in .COM namespace
-		$ ./whoizard -f wordlist.txt -S "\t" -t "com"
+		# output to 'domain-exp.txt'
+		$ ./whoizard -f wordlist.txt -S "\t" -t "com" | tee domain-exp.txt
 	EOF
 	exit ${1:-0}
 }
@@ -100,15 +95,12 @@ check_domain() {
 }
 
 handle_file() {
-	# Use newline separation
-    : ${SEP:=\n} # the colon here acts as a NOP
     while read DOMAIN; do
         check_domain ${DOMAIN}
     done < ${FILE:-/dev/fd/0} # read from stdin if no file
 }
 
 handle_words() {
-	# Default to space separation
     : ${SEP:=\ } # We want a literal space as our sep
     while read -d${SEP} DOMAIN; do
         check_domain ${DOMAIN}
@@ -118,36 +110,16 @@ handle_words() {
 if test ${#} -gt 0; then
     while test ${#} -gt 0; do
         case ${1} in
-            -h|--help)
-                usage;;
-            -f|--file)
-                FILE="${2}"
-                shift 2;;
-            -S|--sep)
-                SEP="${2}"
-                shift 2;;
-            -s|--sleep)
-                SLEEP="${2}"
-                shift 2;;
-            -C|--chunk)
-                CHUNK="${2}"
-                shift 2;;
-            -l|--list)
-                LIST="${2}"
-                shift 2;;
-            -s|--sleep)
-                SLEEP="${2}"
-                shift 2;;
-            -t|--tld)
-                # Don't trust them to add a dot
-                TLD=".${2#.}"
-                shift 2;;
-            -o|--opts)
-                OPTS=${2}
-                shift 2;;
-            *) # Default handler
-                >&2 echo "Got unexpected argument ${1}"
-                usage 1;;
+            -h|--help)  usage;;
+            -f|--file)  FILE="${2}";  shift 2;;
+            -S|--sep)   SEP="${2}";   shift 2;;
+            -s|--sleep) SLEEP="${2}"; shift 2;;
+            -C|--chunk) CHUNK="${2}"; shift 2;;
+            -l|--list)  LIST="${2}";  shift 2;;
+            -s|--sleep) SLEEP="${2}"; shift 2;;
+            -t|--tld)   TLD=".${2#.}"; shift 2;;
+            -o|--opts)  OPTS=${2};    shift 2;;
+            *) >&2 echo "Got unexpected argument ${1}"; usage 1;;
         esac
     done
 fi

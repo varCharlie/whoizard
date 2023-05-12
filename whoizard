@@ -59,8 +59,8 @@ usage() {
 
 		    -c,--csv		Output in CSV format
 
-		    -o,--opts OPTS	Options to pass to \`whois\` program
-
+		    -o,--opts OPTS	Options to pass to \`whois\` program -- Please 
+		                  	Please pass this as a quoted string
 		The most common way to use this program is without any arguments.
 
 		# Run program without args:
@@ -109,7 +109,7 @@ handle_file() {
     : ${SEP:=\n} # the colon here acts as a NOP
     while read DOMAIN; do
         check_domain ${DOMAIN}
-    done < ${INFILE:-/dev/fd/0} # read from stdin if no file
+    done < ${FILE:-/dev/fd/0} # read from stdin if no file
 }
 
 handle_words() {
@@ -126,7 +126,7 @@ if test ${#} -gt 0; then
             -h|--help)
                 usage;;
             -f|--file)
-                INFILE="${2}"
+                FILE="${2}"
                 shift 2;;
             -S|--sep)
                 SEP="${2}"
@@ -147,6 +147,7 @@ if test ${#} -gt 0; then
                 CSV=1
                 shift;;
             -t|--tld)
+                # Don't trust them to add a dot
                 TLD=".${2#.}"
                 shift 2;;
             -o|--opts)

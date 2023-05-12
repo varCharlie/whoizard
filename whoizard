@@ -82,12 +82,7 @@ usage() {
 }
 
 check_domain() {
-    if test ${#} -ne 1; then
-        >&2 echo "${FUNCNAME}: argument error"
-        >&2 echo "(caller): $(caller)"
-        >&2 echo "(args): ${@}"
-        exit 1
-    else
+    if test ${#} -eq 1; then
         local DOMAIN=${1}${TLD:-}
         if test -z "${CSV:-}"; then
             FMTSTRING="%s: %s\n"

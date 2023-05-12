@@ -59,8 +59,10 @@ usage() {
 
 		    -o,--opts OPTS	Options to pass to \`whois\` program -- Please 
 		                  	Please pass this as a quoted string
+		
+		
 		The most common way to use this program is without any arguments.
-
+		
 		# Run program without args:
 		$ ./whoizard
 		google.com

@@ -143,9 +143,6 @@ if test ${#} -gt 0; then
             -s|--sleep)
                 SLEEP="${2}"
                 shift 2;;
-            -C|--chunk)
-                CHUNK="${2}"
-                shift 2;;
             -c|--csv)
                 CSV=1
                 shift;;
